@@ -1,0 +1,49 @@
+:root{
+    /* cores principais */
+    --primary-color: #85BB65;
+    --white: white;
+    --gray: rgba(53, 53, 53, 0.459);
+
+    /* text colors */
+    --text-white: white;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+}
+
+h1 {
+    color: var(--primary-color);
+    font-size: 2rem;
+}
+
+h2{
+    font-size: 1.5rem;
+}
+
+h3{
+    font-size: 1.7rem;
+}
+
+p{
+    font-size: 1.3rem;
+}
+
+input, select{
+    padding: 1.5rem;
+}
+
+.form-container{
+    border: 3px solid ;
+    border-radius: 1rem;
+    padding: 1rem;
+    margin: 1rem;
+    background-color: var(--gray);
+}
+
+.form-title{
+    font-weight: bold;
+}
