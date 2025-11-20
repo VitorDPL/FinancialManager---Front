@@ -1,151 +1,150 @@
 <template>
-    <div class="form-container">
+  <main>
+      <div class="form-container">
         <div class="form-title">
-            <h1>Adicionar novo valor</h1>
+          <h1>Adicionar novo valor</h1>
         </div>
         <div class="forms">
-            <form @submit.prevent="createExpense">
-                <div class="inputs">
-                    <label for="name">Nome: </label>
-                    <input type="text" id="name" v-model="form.name" required placeholder="Digite o que você comprou">
-                </div>
-
-                <div class="inputs">
-                    <label for="category">Categoria</label>
-                    <div class="category-flex">
-                        <select id="category" v-model="form.category" required>
-                            <option value="">Selecione uma categoria</option>
-                            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="inputs">
-                    <label for="value">Valor</label>
-                    <input type="number" id="value" v-model="form.value" required placeholder="Digite o valor da compra">
-                </div>
-
-                <div class="inputs">
-                    <label for="type_expense">À vista ou parcelado</label>
-                    <select id="type_expense" v-model="form.type_expense" required>
-                        <option value="">Selecione o tipo:</option>
-                        <option value="à vista">À vista</option>
-                        <option value="parcelado">Parcelado</option>
-                    </select>
-                </div>
-
-                <div class="inputs" v-if="form.type_expense == 'parcelado'">
-
-                        <label for="type_expense">Número de parcelas</label>
-                        <input type="number" id="type_expense" required v-model="form.number_of_installments">
-
-                </div>
-
-                <div class="inputs">
-                    <label for="date">Data</label>
-                    <Calendar v-model="date" id="date"/>
-                </div>
-
-                <div class="button">
-                    <button type="submit" :disabled="loading">
-                        Salvar
-                    </button>
-                </div>
-
-            </form>
-            
-            <div v-if="message">
-                {{ message }}
+          <form @submit.prevent="createExpense">
+            <div class="inputs">
+              <label for="name">Nome:</label>
+              <input
+                id="name"
+                type="text"
+                v-model="form.name"
+                required
+                placeholder="Digite o que você comprou"
+              />
             </div>
+            <div class="inputs">
+              <label for="category">Categoria</label>
+              <div class="category-flex">
+                <select id="category" v-model="form.category" required>
+                  <option value="">Selecione uma categoria</option>
+                  <option
+                    v-for="category in categories"
+                    :key="category.id"
+                    :value="category.id"
+                  >
+                    {{ category.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="inputs">
+              <label for="value">Valor</label>
+              <input
+                id="value"
+                type="number"
+                v-model="form.value"
+                required
+                placeholder="Digite o valor da compra"
+              />
+            </div>
+            <div class="inputs">
+              <label for="type_expense">À vista ou parcelado</label>
+              <select id="type_expense" v-model="form.type_expense" required>
+                <option value="">Selecione o tipo:</option>
+                <option value="à vista">À vista</option>
+                <option value="parcelado">Parcelado</option>
+                <option value="mensal">Mensal</option>
+              </select>
+            </div>
+            <div class="inputs" v-if="form.type_expense === 'parcelado'">
+              <label for="installments">Número de parcelas</label>
+              <input
+                id="installments"
+                type="number"
+                required
+                v-model="form.number_of_installments"
+              />
+            </div>
+            <div class="inputs">
+              <label for="date">Data</label>
+              <Calendar v-model="date" id="date" />
+            </div>
+            <div class="button">
+              <button type="submit" :disabled="loading">Salvar</button>
+            </div>
+          </form>
+          <div v-if="message">{{ message }}</div>
         </div>
-    </div>
+      </div>
+  </main>
 </template>
 
 <script setup>
-import axios from 'axios';
-import { ref, onMounted } from 'vue';
+import axios from 'axios'
+import { ref, reactive, onMounted } from 'vue'
+import { useExpenseStore } from '@/stores/expense'
 
-let loading = ref(false);
-let message = ref('');
-const categories = ref([]);
-const date = ref(new Date()     );
-const form = ref({
-    name: '',
-    category: null,
-    value: null,
-    type_expense: 'à vista',
-    date: date,
+const store = useExpenseStore()
 
-    number_of_installments: null
+const loading = ref(false)
+const message = ref('')
+const categories = ref([])
+const date = ref(new Date())
+
+const form = reactive({
+  name: '',
+  category: null,
+  value: null,
+  type_expense: 'à vista',
+  number_of_installments: null,
 })
 
-async function getCategories(){
-    try{
-        const response = await axios.get("http://127.0.0.1:8000/api/categories/read/");
-        categories.value = response.data;
-    } catch(error){
-        message.value = error.response?.data?.error || 'Erro ao listar as categorias';
-    } 
+async function getCategories() {
+  try {
+    const { data } = await axios.get('http://127.0.0.1:8000/api/categories/read/')
+    categories.value = data
+  } catch (error) {
+    message.value = error.response?.data?.error || 'Erro ao listar categorias'
+  }
 }
 
-async function createExpense(){
-    try{
-        loading = true;
+function buildPayload() {
+  const base = {
+    name: form.name,
+    category: form.category,
+    value: parseFloat(form.value),
+    type_expense: form.type_expense,
+    date: formatDateToSave(date.value),
+  }
 
-        console.log("valor de type: ", form.value.type_expense);
+  if (form.type_expense === 'parcelado') {
+    base.number_of_installments = form.number_of_installments
+  }
 
-        if(form.value.type_expense=='parcelado'){
-            const response = await axios.post("http://127.0.0.1:8000/api/expenses/create/", {
-                name: form.value.name,
-                category: form.value.category,
-                value: parseFloat(form.value.value),
-                type_expense: form.value.type_expense,
-                date: formatDateToSave(date.value),
-                number_of_installments: form.value.number_of_installments
-            });
-        }else{
-            const response = await axios.post("http://127.0.0.1:8000/api/expenses/create/", {
-                name: form.value.name,
-                category: form.value.category,
-                value: parseFloat(form.value.value),
-                type_expense: form.value.type_expense,
-                date: formatDateToSave(date.value)
-            });
-        }
-
-        form.value.name= "";
-        form.value.category = null;
-        form.value.value = null;
-        form.value.number_of_installments = null
-        
-        message.value = "Valor incluso com sucesso!";
-
-        setTimeout(() => {
-            message.value = ""
-        }, 2000)
-
-    }catch(error){
-        console.log("Erro: ", error);
-    }finally{
-        loading=false;
-    }
+  return base
 }
 
-function formatDateToSave(date){
-    // converte a data para o formato americano para que seja salvo no banco
-    try{
-        if(!date) return null;
+async function createExpense() {
+  try {
+    loading.value = true
+    const payload = buildPayload()
+    await store.addExpense(payload)
 
-        return date.toISOString().split('T')[0];
-    }catch(error){
-        console.error("Erro ao converter a data: ", error);
-    }
+    // Limpa o formulário
+    form.name = ''
+    form.category = null
+    form.value = null
+    form.number_of_installments = null
+
+    message.value = 'Valor incluso com sucesso!'
+    setTimeout(() => (message.value = ''), 2000)
+  } catch (error) {
+    console.error('Erro:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
-onMounted(() => {
-    getCategories();
-})
+function formatDateToSave(d) {
+  if (!d) return null
+  return d.toISOString().split('T')[0]
+}
 
+onMounted(getCategories)
 </script>
 
 <style scoped>

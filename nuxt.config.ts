@@ -32,7 +32,8 @@ export default defineNuxtConfig({
         '@primevue/nuxt-module',
         '@nuxt/content',
         '@nuxt/image',
-        '@nuxt/scripts'
+        '@nuxt/scripts',
+        '@pinia/nuxt'
     ],
     css: [
         '../assets/styles/main.css',
